@@ -3,58 +3,80 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model CourtEmployee {
-  id         Int      @id @default(autoincrement())
-  name       String
-  mobile     String   @unique
-  email      String?  @unique
-  role       String   @default("court_employee")
-  createdAt  DateTime @default(now())
-  cases      Case[]   @relation("AssigneeCases")
-  tasks      Task[]
-  notifications Notification[]
-  activities ActivityLog[]
+model Citizen {
+  id                Int              @id @default(autoincrement())
+  name              String?
+  email             String?          @unique
+  phone             String?          @unique
+  preferredLanguage String?
+  otp               String?
+  otpExpiresAt      DateTime?
+  role              String           @default("citizen")
+  createdAt         DateTime         @default(now())
+  cases             Case[]           @relation("CitizenCases")
+  evidences         Evidence[]
+  notebooks         NotebookEntry[]
+  podcasts          Podcast[]
 }
 
 model Case {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
-  status      String   @default("open")
-  createdAt   DateTime @default(now())
-  assigneeId  Int?
-  assignee    CourtEmployee? @relation("AssigneeCases", fields: [assigneeId], references: [id])
+  citizenId   Int
+  status      String    @default("open")
+  eCourtsId   String?
+  assignedTo  Int?
+  createdAt   DateTime  @default(now())
+  citizen     Citizen   @relation("CitizenCases", fields: [citizenId], references: [id])
+  evidences   Evidence[]
+  analyses    Analysis[]
 }
 
-model Task {
-  id           Int      @id @default(autoincrement())
-  title        String
-  description  String?
-  completed    Boolean  @default(false)
-  assigneeId   Int
-  assignee     CourtEmployee @relation(fields: [assigneeId], references: [id])
-  dueDate      DateTime?
-  createdAt    DateTime @default(now())
-}
-
-model Notification {
+model Evidence {
   id         Int      @id @default(autoincrement())
-  message    String
-  read       Boolean  @default(false)
-  recipientId Int
-  recipient   CourtEmployee @relation(fields: [recipientId], references: [id])
-  createdAt  DateTime @default(now())
+  caseId     Int
+  citizenId  Int
+  type       String   // pdf | image | audio | video
+  storageUrl String
+  hash       String
+  ocrText    String?
+  uploadedAt DateTime @default(now())
+  case       Case     @relation(fields: [caseId], references: [id])
+  citizen    Citizen  @relation(fields: [citizenId], references: [id])
 }
 
-model ActivityLog {
+model Analysis {
+  id              Int      @id @default(autoincrement())
+  caseId          Int
+  score           Int
+  category        String
+  reasons         Json?
+  recommendations String?
+  runAt           DateTime @default(now())
+  case            Case     @relation(fields: [caseId], references: [id])
+}
+
+model NotebookEntry {
+  id        Int      @id @default(autoincrement())
+  caseId    Int
+  userId    Int
+  question  String
+  response  String
+  audioUrl  String?
+  createdAt DateTime @default(now())
+  case      Case     @relation(fields: [caseId], references: [id])
+}
+
+model Podcast {
   id          Int      @id @default(autoincrement())
-  action      String
-  meta        String?
-  actorId     Int
-  actor       CourtEmployee @relation(fields: [actorId], references: [id])
-  createdAt  DateTime @default(now())
+  caseId      Int
+  audioUrl    String
+  summary     String
+  generatedAt DateTime @default(now())
+  case        Case     @relation(fields: [caseId], references: [id])
 }
