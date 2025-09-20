@@ -1,0 +1,1 @@
+Prisma schema for all user segments.

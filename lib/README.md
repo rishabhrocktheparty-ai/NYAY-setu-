@@ -1,0 +1,1 @@
+Shared core logic, authentication, constants, and DB client go here.
