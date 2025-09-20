@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model CourtEmployee {
+  id         Int      @id @default(autoincrement())
+  name       String
+  mobile     String   @unique
+  email      String?  @unique
+  role       String   @default("court_employee")
+  createdAt  DateTime @default(now())
+  cases      Case[]   @relation("AssigneeCases")
+  tasks      Task[]
+  notifications Notification[]
+  activities ActivityLog[]
+}
+
+model Case {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+  assigneeId  Int?
+  assignee    CourtEmployee? @relation("AssigneeCases", fields: [assigneeId], references: [id])
+}
+
+model Task {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  completed    Boolean  @default(false)
+  assigneeId   Int
+  assignee     CourtEmployee @relation(fields: [assigneeId], references: [id])
+  dueDate      DateTime?
+  createdAt    DateTime @default(now())
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  message    String
+  read       Boolean  @default(false)
+  recipientId Int
+  recipient   CourtEmployee @relation(fields: [recipientId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  meta        String?
+  actorId     Int
+  actor       CourtEmployee @relation(fields: [actorId], references: [id])
+  createdAt  DateTime @default(now())
+}
